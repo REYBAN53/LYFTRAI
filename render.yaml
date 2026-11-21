@@ -1,18 +1,19 @@
 # Render Blueprint: deploys both tiers from this repo (Dashboard -> New -> Blueprint).
-# Secrets are declared with `sync: false`; Render asks for them on first deploy and never
-# reads them from the repository.
+# Secrets are declared with `sync: false`; Render asks for them when the Blueprint is created
+# and never reads them from the repository. All paths below are relative to the repo root.
 services:
+  # FastAPI + LiteLLM backend, built from backend/Dockerfile (final "runtime" stage).
   - type: web
     name: lyftr-chat-backend
     runtime: docker
-    rootDir: backend
-    dockerfilePath: ./Dockerfile
     plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     healthCheckPath: /health
     envVars:
-      - key: LLM_API_KEYS          # comma-separated, at least 2 keys
+      - key: LLM_API_KEYS          # comma-separated, at least 2 keys: key1,key2
         sync: false
-      - key: ALLOWED_ORIGINS       # e.g. https://lyftr-chat-frontend.onrender.com
+      - key: ALLOWED_ORIGINS       # the frontend URL, e.g. https://lyftr-chat-frontend.onrender.com
         sync: false
       - key: ENABLE_FAILURE_SIMULATION
         value: "true"
@@ -21,22 +22,14 @@ services:
       - key: LLM_MODEL
         value: gemini/gemini-flash-lite-latest
 
+  # React static site (free). The backend URL is baked in at build time.
   - type: web
     name: lyftr-chat-frontend
     runtime: static
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
     envVars:
-      - key: VITE_API_BASE_URL     # e.g. https://lyftr-chat-backend.onrender.com
+      - key: VITE_API_BASE_URL     # the backend URL, e.g. https://lyftr-chat-backend.onrender.com
         sync: false
       - key: NODE_VERSION
         value: "22"
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    headers:
-      - path: /env-config.js
-        name: Cache-Control
-        value: no-store
