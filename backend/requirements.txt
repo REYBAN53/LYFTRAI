@@ -1,0 +1,11 @@
+# Runtime dependencies (pinned for reproducible builds).
+fastapi==0.165.0
+uvicorn[standard]==0.54.0
+sqlalchemy==2.1.9
+pydantic-settings==2.16.3
+litellm==1.110.2
+# LiteLLM's response-cache read path transitively imports modules that need
+# these two packages, but its base install does not declare them. Without them
+# every cache lookup fails silently and nothing is ever served from cache.
+orjson==3.13.0
+soundfile==0.14.0

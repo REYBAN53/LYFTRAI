@@ -1,0 +1,33 @@
+/** Mirrors the backend API contract exactly. */
+
+export type ResolutionSource = "LIVE_INFERENCE" | "LLM_CACHE";
+
+export interface ChatMetadata {
+  resolution_source: ResolutionSource;
+  model: string;
+  latency_ms: number;
+  input_tokens: number;
+  output_tokens: number;
+  key_id: string | null;
+  fallback_attempts: number;
+}
+
+export interface ChatRequest {
+  session_id: string;
+  message: string;
+  system_prompt?: string;
+}
+
+export interface ChatResponse {
+  session_id: string;
+  reply: string;
+  metadata: ChatMetadata;
+}
+
+export interface HealthResponse {
+  status: "ok";
+  keys_configured: number;
+  cache_enabled: boolean;
+  model?: string;
+  failure_simulation_enabled?: boolean;
+}
