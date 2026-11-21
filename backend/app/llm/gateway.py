@@ -135,9 +135,17 @@ class LLMGateway:
                 reply = _extract_reply(response)
             except Exception as exc:  # provider boundary: every failure means "try the next key"
                 status = getattr(exc, "status_code", None)
-                reason = self._keys.redact(f"{type(exc).__name__}: {exc}")[:300]
+                # Keep the provider's explanation (e.g. "API has not been used in project ...") so
+                # outages are diagnosable from logs, with every key and key-like token removed.
+                reason = self._keys.redact(" ".join(str(exc).split()))[:500]
                 failures.append(FailedAttempt(key.key_id, status, reason, simulated=False))
-                logger.warning("key %s failed (HTTP %s, %s); failing over", key.key_id, status, type(exc).__name__)
+                logger.warning(
+                    "key %s failed (HTTP %s, %s); failing over. provider said: %s",
+                    key.key_id,
+                    status,
+                    type(exc).__name__,
+                    reason,
+                )
                 continue
 
             cache_hit = bool((getattr(response, "_hidden_params", None) or {}).get("cache_hit"))

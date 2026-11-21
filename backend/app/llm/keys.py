@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
+
+# Anything that looks like a credential even if it is not one of ours (e.g. echoed in a URL).
+_KEY_LIKE = re.compile(r"(AIza[0-9A-Za-z_\-]{20,}|(?<=key=)[^&\s\"']+)")
 
 
 @dataclass(frozen=True)
@@ -25,4 +29,4 @@ class KeyPool:
         """Remove any key material from text (provider error messages may echo the key or URL)."""
         for key in self._keys:
             text = text.replace(key.secret, f"<{key.key_id}>")
-        return text
+        return _KEY_LIKE.sub("<redacted>", text)

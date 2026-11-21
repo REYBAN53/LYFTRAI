@@ -48,3 +48,10 @@ def test_invalid_headers_raise(raw: str) -> None:
 def test_cors_origins_parse() -> None:
     settings = Settings(_env_file=None, allowed_origins="http://a.com, https://b.app ,")
     assert settings.cors_origins == ["http://a.com", "https://b.app"]
+
+
+def test_redact_also_removes_key_like_tokens_not_in_pool() -> None:
+    pool = KeyPool(["mine"])
+    text = pool.redact("GET https://x/v1?key=AIzaSyFAKEFAKEFAKEFAKEFAKEFAKE12&alt=sse failed for mine")
+    assert "AIza" not in text and "mine" not in text
+    assert "key=<redacted>&alt=sse" in text
